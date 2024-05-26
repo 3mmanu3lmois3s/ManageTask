@@ -1,0 +1,58 @@
+[
+    {
+        "id_user": "3d2f2d3b-39f2-4fd2-b3ae-316193792209",
+        "nickname": "ADMIN333",
+        "clave": "SUBETEAMIMOTOPIBON#333",
+        "email": "email@example.com",
+        "token": "ca3155aa-ead6-4be4-857c-7131b6726f8c",
+        "token_expiracion": "2024-05-26T19:30:07.291634",
+        "estado": true,
+        "fecha_creacion": "2024-05-23T16:34:23.409595",
+        "pertenece": false,
+        "pertenece_a": "",
+        "tipo": "admin",
+        "zona_horaria": "UTC"
+    },
+    {
+        "id_user": "740e4f85-f2e4-4ef9-ab6d-aa6ef67c9f89",
+        "nickname": "Annyabebe",
+        "clave": "11111",
+        "email": "email@example.com",
+        "token": null,
+        "token_expiracion": null,
+        "estado": true,
+        "fecha_creacion": "2024-05-23T16:36:18.140037",
+        "pertenece": false,
+        "pertenece_a": "",
+        "tipo": "admin",
+        "zona_horaria": "UTC"
+    },
+    {
+        "id_user": "059cc870-967c-41ab-9d0f-7f0581487cd5",
+        "nickname": "diego",
+        "clave": "11111",
+        "email": "email@example.com",
+        "token": null,
+        "token_expiracion": null,
+        "estado": true,
+        "fecha_creacion": "2024-05-23T16:37:12.435761",
+        "pertenece": false,
+        "pertenece_a": "",
+        "tipo": "user",
+        "zona_horaria": "UTC"
+    },
+    {
+        "id_user": "dfdfad5b-cda5-4890-b2e4-b3f2a69acd4f",
+        "nickname": "santiago",
+        "clave": "11111",
+        "email": "email@example.com",
+        "token": null,
+        "token_expiracion": null,
+        "estado": true,
+        "fecha_creacion": "2024-05-25T15:08:30.863671",
+        "pertenece": false,
+        "pertenece_a": "",
+        "tipo": "user",
+        "zona_horaria": "UTC+1"
+    }
+]
