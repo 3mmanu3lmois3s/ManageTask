@@ -71,13 +71,17 @@
 9. **Seguridad**
     - [x] Verificar token en cada operación que lo requiera.
     - [x] Manejar expiración de tokens.
+    - [x] Implementar protección CSRF.
+    - [x] Configurar CORS para permitir solicitudes desde el origen esperado.
 
 ## Tareas Adicionales
 - [x] Ajustar el manejo de fechas para filtros.
 - [x] Revisar y corregir errores en la lógica de negocio.
 - [x] Asegurar que los filtros de búsqueda funcionen correctamente.
 - [x] Documentar errores y manejar excepciones.
-
+- [x] Integrar manejo de sesiones en las pruebas curl.
+- [x] Implementar y validar el flujo de login con CSRF token.
+- [x] Crear diagramas de secuencia para el proceso de login, uso general del API y la app de consola.
 
 
 ## Instrucciones para poder ejecutar la app
