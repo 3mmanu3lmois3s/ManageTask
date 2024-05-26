@@ -1,5 +1,6 @@
 ## Diagrama de Secuencia: Uso General del API
 
+```mermaid
 sequenceDiagram
     participant Usuario
     participant Cliente

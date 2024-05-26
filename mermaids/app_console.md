@@ -1,5 +1,6 @@
 ## Diagrama de Secuencia: App de Consola
 
+```mermaid
 sequenceDiagram
     participant Usuario
     participant AppConsola
