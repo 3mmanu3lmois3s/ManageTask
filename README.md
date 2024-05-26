@@ -28,7 +28,6 @@ sequenceDiagram
 
 ## Diagrama de Secuencia: Uso General del API
 
-```mermaid
 sequenceDiagram
     participant Usuario
     participant Cliente
@@ -48,7 +47,6 @@ sequenceDiagram
 
 ## Diagrama de Secuencia: App de Consola
 
-```mermaid
 sequenceDiagram
     participant Usuario
     participant AppConsola
