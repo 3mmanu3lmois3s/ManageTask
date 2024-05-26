@@ -475,7 +475,7 @@ def mostrar_menu_usuarios():
     print("** 2. Modificar un usuario                 **")
     print("** 3. Eliminar un usuario                  **")
     print("** 4. Listar todos los usuarios            **")
-    print("** 5. Volver al menú principal             **")
+    print("** 5. Gestionar tareas                     **")
     print("*********************************************")
 
 def gestionar_usuarios():
@@ -603,7 +603,7 @@ def menu_tareas(id_usuario, nickname, tipo_usuario):
         
         if opcion == "1":
             descripcion = input("Descripción de la nueva tarea: ")
-            tipo = input("Tipo de la tarea (True/False): ").lower() == 'true'
+            tipo = input("¿Es una tarea importante? (True/False): ").lower() == 'true'
             compartida = input("¿La tarea es compartida? (True/False): ").lower() == 'true'
             compartida_con = input("IDs de usuarios con quienes se comparte (separados por coma): ") if compartida else ""
             dependiente = input("¿La tarea depende de otra? (True/False): ").lower() == 'true'

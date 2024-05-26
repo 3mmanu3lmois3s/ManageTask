@@ -1,12 +1,48 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, render_template, session
 from flasgger import Swagger, swag_from
+from flask_cors import CORS
+from flask_wtf.csrf import CSRFProtect, generate_csrf, CSRFError
 from ManageTask import ListaDeTareas, GestorUsuarios
 
 app = Flask(__name__)
+app.config['SECRET_KEY'] = 'your_secret_key'  # Usa una clave real en producción
+app.config['WTF_CSRF_TIME_LIMIT'] = 1800  # 30 minutos expresados en segundos
+
+# Configuración de CORS para permitir solicitudes desde el origen esperado
+CORS(app, supports_credentials=True, resources={r"*": {"origins": "http://127.0.0.1:5577", "methods": ["GET", "POST", "PUT", "DELETE"], "allow_headers": ["Content-Type", "X-CSRFToken"]}})
+
+# Inicialización de CSRF Protection
+csrf = CSRFProtect(app)
+csrf.init_app(app)
+
 swagger = Swagger(app)
 
 lista_de_tareas = ListaDeTareas()
 gestor_usuarios = GestorUsuarios()
+
+@app.route("/csrf-token", methods=["GET"])
+def csrf_token():
+    # Generar el token CSRF una sola vez
+    csrf_token = generate_csrf()
+    response = jsonify({'csrfToken': csrf_token})
+    response.headers['X-CSRFToken'] = csrf_token
+    return response
+
+@app.after_request
+def after_request(response):
+    # Configuración de headers para CORS y CSRF
+    response.headers.add('Access-Control-Allow-Credentials', 'true')
+    response.headers.add("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+    response.headers.add('Access-Control-Allow-Headers', 'Content-Type, X-CSRFToken')
+    return response
+
+@app.errorhandler(CSRFError)
+def handle_csrf_error(e):
+    return jsonify(error=str(e.description)), 400
+
+@app.errorhandler(400)
+def handle_bad_request(e):
+    return jsonify(error=str(e)), 400
 
 @app.route("/login", methods=["POST"])
 @swag_from({
@@ -46,6 +82,7 @@ def login_usuario():
         return jsonify({"message": "Usuario o clave incorrecta"}), 401
     else:
         if gestor_usuarios.validar_token(nickname, token):
+            session['user'] = nickname  # Guardar el usuario en la sesión
             return jsonify({
                 "message": "Login exitoso",
                 "id_usuario": next(u.id_user for u in gestor_usuarios.usuarios if u.nickname == nickname),
@@ -77,6 +114,7 @@ def login_usuario():
 def logout_usuario():
     data = request.get_json()
     nickname = data.get("nickname")
+    session.pop('user', None)  # Eliminar usuario de la sesión
     for usuario in gestor_usuarios.usuarios:
         if usuario.nickname == nickname:
             usuario.token = None

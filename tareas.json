@@ -253,5 +253,22 @@
         "dependiente_de": "",
         "completada_por": "3d2f2d3b-39f2-4fd2-b3ae-316193792209",
         "b": false
+    },
+    {
+        "id": "f0ead983-5f49-44e6-8648-5f163644c0f7",
+        "descripcion": "Descripción de la tarea",
+        "estado": "e",
+        "fecha_inicio": "2024-05-26T11:39:44.742078",
+        "fecha_fin": "2024-05-26T11:49:22.773885",
+        "id_usuario": "3d2f2d3b-39f2-4fd2-b3ae-316193792209",
+        "tipo": true,
+        "id_sec": 15,
+        "id_sec2": -15,
+        "compartida": false,
+        "compartida_con": "",
+        "dependiente": false,
+        "dependiente_de": "",
+        "completada_por": null,
+        "b": false
     }
 ]
