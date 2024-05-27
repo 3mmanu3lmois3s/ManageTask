@@ -1,18 +1,24 @@
-from flask import Flask, request, jsonify, render_template, session
+from flask import Flask, request, jsonify, render_template, session, send_from_directory, redirect, url_for, abort
 from flasgger import Swagger, swag_from
 from flask_cors import CORS
 from flask_wtf.csrf import CSRFProtect, generate_csrf, CSRFError
 from ManageTask import ListaDeTareas, GestorUsuarios
 from datetime import datetime, timedelta
+import os
+import json
+import re
 
-app = Flask(__name__)
+# Definir la URL base como una constante
+BASE_URL = 'http://127.0.0.1:5577'
+
+app = Flask(__name__, static_folder='webapp')
 app.config['SECRET_KEY'] = 'your_secret_key'  # Usa una clave real en producción
 app.config['WTF_CSRF_TIME_LIMIT'] = 1800  # 30 minutos expresados en segundos
 app.config['SESSION_COOKIE_SAMESITE'] = 'None'
 app.config['SESSION_COOKIE_SECURE'] = True
 
 # Configuración de CORS para permitir solicitudes desde el origen esperado
-CORS(app, supports_credentials=True, resources={r"*": {"origins": "http://127.0.0.1:5577", "methods": ["GET", "POST", "PUT", "DELETE"], "allow_headers": ["Content-Type", "X-CSRFToken"]}})
+CORS(app, supports_credentials=True, resources={r"*": {"origins": BASE_URL, "methods": ["GET", "POST", "PUT", "DELETE"], "allow_headers": ["Content-Type", "X-CSRFToken"]}})
 
 # Inicialización de CSRF Protection
 csrf = CSRFProtect(app)
@@ -27,20 +33,39 @@ gestor_usuarios = GestorUsuarios()
 login_attempts = {}
 LOCKOUT_TIME = 30 * 60  # 30 minutos en segundos
 
+# Función para validar entradas de texto
+def validar_texto(texto):
+    if not texto or not re.match(r'^[A-Za-z0-9#@!$%^&*()_+\-=\[\]{};\\|,.<>\/?]*$', texto):
+        raise ValueError("Entrada no válida")
+    return texto
+
+@app.route("/webapp")
+def root():
+    return send_from_directory(app.static_folder, 'index.html')
+
+@app.route("/<path:path>")
+def static_proxy(path):
+    if os.path.exists(os.path.join(app.static_folder, path)):
+        return send_from_directory(app.static_folder, path)
+    else:
+        return send_from_directory(app.static_folder, 'index.html')
+
+@app.errorhandler(404)
+def not_found(e):
+    return send_from_directory(app.static_folder, 'index.html', '/')
+
 @app.route("/csrf-token", methods=["GET"])
 def csrf_token():
-    # Generar el token CSRF una sola vez
     csrf_token = generate_csrf()
     response = jsonify({'csrfToken': csrf_token})
-    response.headers['Access-Control-Allow-Origin'] = 'http://127.0.0.1:5577'
+    response.headers['Access-Control-Allow-Origin'] = BASE_URL
     response.headers['Access-Control-Allow-Credentials'] = 'true'
     response.headers['X-CSRFToken'] = csrf_token
     return response
 
 @app.after_request
 def after_request(response):
-    # Configuración de headers para CORS y CSRF
-    response.headers['Access-Control-Allow-Origin'] = 'http://127.0.0.1:5577'
+    response.headers['Access-Control-Allow-Origin'] = BASE_URL
     response.headers['Access-Control-Allow-Credentials'] = 'true'
     response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS'
     response.headers['Access-Control-Allow-Headers'] = 'Content-Type, X-CSRFToken'
@@ -81,11 +106,13 @@ def login_usuario():
     print("Request received at /login")
     data = request.get_json()
     print("Login data received:", data)
-    nickname = data.get("nickname")
-    clave = data.get("clave")
-    token = data.get("token")
+    try:
+        nickname = validar_texto(data.get("nickname"))
+        clave = validar_texto(data.get("clave"))
+        token = data.get("token")
+    except ValueError as e:
+        return jsonify({"message": str(e)}), 400
 
-    # Verificar si el usuario está bloqueado
     current_time = datetime.now()
     if nickname in login_attempts:
         attempts, lockout_until = login_attempts[nickname]
@@ -96,11 +123,8 @@ def login_usuario():
         usuario = next((u for u in gestor_usuarios.usuarios if u.nickname == nickname and u.clave == clave), None)
         if usuario:
             gestor_usuarios.enviar_token(usuario)
-            return jsonify({
-                "message": "Token enviado al email registrado."
-            }), 200
+            return jsonify({"message": "Token enviado al email registrado."}), 200
         else:
-            # Incrementar los intentos de login fallidos
             if nickname in login_attempts:
                 attempts, lockout_until = login_attempts[nickname]
                 attempts += 1
@@ -115,8 +139,7 @@ def login_usuario():
             return jsonify({"message": f"Usuario o clave incorrecta. Te quedan {remaining_attempts} intentos."}), 401
     else:
         if gestor_usuarios.validar_token(nickname, token):
-            session['user'] = nickname  # Guardar el usuario en la sesión
-            # Restablecer los intentos de login después de un login exitoso
+            session['user'] = nickname
             if nickname in login_attempts:
                 del login_attempts[nickname]
             return jsonify({
@@ -150,7 +173,7 @@ def login_usuario():
 def logout_usuario():
     data = request.get_json()
     nickname = data.get("nickname")
-    session.pop('user', None)  # Eliminar usuario de la sesión
+    session.pop('user', None)
     for usuario in gestor_usuarios.usuarios:
         if usuario.nickname == nickname:
             usuario.token = None
@@ -161,12 +184,18 @@ def logout_usuario():
 
 def verificar_token(func):
     def wrapper(*args, **kwargs):
-        data = request.get_json()
-        nickname = data.get("nickname")
-        token = data.get("token")
-        if gestor_usuarios.validar_token(nickname, token):
-            return func(*args, **kwargs)
-        return jsonify({"message": "Token inválido o expirado"}), 401
+        try:
+            data = request.get_json()
+            nickname = validar_texto(data.get("nickname"))
+            token = data.get("token")
+            if gestor_usuarios.validar_token(nickname, token):
+                return func(*args, **kwargs)
+            return jsonify({"message": "Token inválido o expirado"}), 401
+        except ValueError as ve:
+            return jsonify({"message": str(ve)}), 400
+        except Exception as e:
+            print(f"Error: {str(e)}")
+            return jsonify({"message": "Error interno del servidor"}), 500
     wrapper.__name__ = func.__name__
     return wrapper
 
@@ -228,13 +257,13 @@ def obtener_tareas():
 @verificar_token
 def agregar_tarea():
     data = request.get_json()
-    descripcion = data.get("descripcion")
+    descripcion = validar_texto(data.get("descripcion"))
     tipo = data.get("tipo", False)
-    id_usuario = data.get("id_usuario")
+    id_usuario = validar_texto(data.get("id_usuario"))
     compartida = data.get("compartida", False)
-    compartida_con = data.get("compartida_con", "")
+    compartida_con = validar_texto(data.get("compartida_con", ""))
     dependiente = data.get("dependiente", False)
-    dependiente_de = data.get("dependiente_de", "")
+    dependiente_de = validar_texto(data.get("dependiente_de", ""))
     if descripcion and id_usuario:
         lista_de_tareas.cargar_tareas()
         lista_de_tareas.agregar_tarea(descripcion, tipo, id_usuario, compartida, compartida_con, dependiente, dependiente_de)
@@ -271,7 +300,7 @@ def agregar_tarea():
 @verificar_token
 def marcar_tarea_completada(id_sec2):
     data = request.get_json()
-    id_usuario = data.get("id_usuario")
+    id_usuario = validar_texto(data.get("id_usuario"))
     if id_usuario:
         try:
             lista_de_tareas.cargar_tareas()
@@ -311,7 +340,7 @@ def marcar_tarea_completada(id_sec2):
 @verificar_token
 def eliminar_tarea(id_sec2):
     data = request.get_json()
-    id_usuario = data.get("id_usuario")
+    id_usuario = validar_texto(data.get("id_usuario"))
     if id_usuario:
         try:
             lista_de_tareas.cargar_tareas()
@@ -369,7 +398,7 @@ def obtener_usuarios():
                 'type': 'object',
                 'properties': {
                     'nickname': {'type': 'string'},
-                    'clave': {'type': 'string'},
+                    'password': {'type': 'string'},
                     'email': {'type': 'string'},
                     'tipo': {'type': 'string'},
                     'zona_horaria': {'type': 'string'}
@@ -379,22 +408,22 @@ def obtener_usuarios():
     ],
     'responses': {
         201: {'description': 'Usuario agregado correctamente'},
-        400: {'description': 'Nickname, clave y email son requeridos'}
+        400: {'description': 'Nickname, password y email son requeridos'}
     }
 })
 @app.route("/usuarios", methods=["POST"])
 @verificar_token
 def agregar_usuario():
     data = request.get_json()
-    nickname = data.get("nickname")
-    clave = data.get("clave")
-    email = data.get("email")
+    nickname = validar_texto(data.get("nickname"))
+    password = validar_texto(data.get("password"))
+    email = validar_texto(data.get("email"))
     tipo = data.get("tipo", "user")
     zona_horaria = data.get("zona_horaria", "UTC")
-    if nickname and clave and email:
-        gestor_usuarios.agregar_usuario(nickname, clave, email, tipo, zona_horaria)
+    if nickname and password and email:
+        gestor_usuarios.agregar_usuario(nickname, password, email, tipo, zona_horaria)
         return jsonify({"message": "Usuario agregado correctamente"}), 201
-    return jsonify({"message": "Nickname, clave y email son requeridos"}), 400
+    return jsonify({"message": "Nickname, password y email son requeridos"}), 400
 
 @swag_from({
     'parameters': [
@@ -422,7 +451,11 @@ def agregar_usuario():
 @verificar_token
 def modificar_usuario(id_user):
     data = request.get_json()
-    if gestor_usuarios.modificar_usuario(id_user, **data):
+    usuario = next((u for u in gestor_usuarios.usuarios if u.id_user == id_user), None)
+    if usuario:
+        for key, value in data.items():
+            setattr(usuario, key, value)
+        gestor_usuarios.guardar_usuarios()
         return jsonify({"message": "Usuario modificado correctamente"}), 200
     return jsonify({"message": "Usuario no encontrado"}), 404
 
@@ -442,8 +475,12 @@ def modificar_usuario(id_user):
 @app.route("/usuarios/<id_user>", methods=["DELETE"])
 @verificar_token
 def eliminar_usuario(id_user):
-    gestor_usuarios.eliminar_usuario(id_user)
-    return jsonify({"message": "Usuario eliminado correctamente"}), 200
+    usuario = next((u for u in gestor_usuarios.usuarios if u.id_user == id_user), None)
+    if usuario:
+        gestor_usuarios.usuarios.remove(usuario)
+        gestor_usuarios.guardar_usuarios()
+        return jsonify({"message": "Usuario eliminado correctamente"}), 200
+    return jsonify({"message": "Usuario no encontrado"}), 404
 
 @swag_from({
     'parameters': [
@@ -468,7 +505,7 @@ def eliminar_usuario(id_user):
 @verificar_token
 def limpiar_sistema():
     data = request.get_json()
-    id_usuario = data.get("id_usuario")
+    id_usuario = validar_texto(data.get("id_usuario"))
     usuario = next((u for u in gestor_usuarios.usuarios if u.id_user == id_usuario), None)
     if usuario and usuario.tipo == "admin":
         lista_de_tareas.limpiar_sistema()
@@ -591,4 +628,4 @@ def obtener_tareas_eliminadas_filtradas():
         return jsonify({"message": str(e)}), 400
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(port=5577, debug=True)

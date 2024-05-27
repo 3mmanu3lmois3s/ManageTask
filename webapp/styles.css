@@ -1,32 +1,102 @@
-* {
-    box-sizing: border-box;
+body {
+    font-family: Arial, sans-serif;
     margin: 0;
     padding: 0;
-    font-family: Arial, sans-serif;
-}
-
-body {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
-    background-color: #f0f0f0;
+    background-color: #f4f4f4;
 }
 
 .hidden {
     display: none;
 }
 
-.login-container, .task-container {
-    background-color: white;
-    padding: 20px;
-    border-radius: 10px;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+.navbar {
+    background-color: #0052CC; /* Color azul similar a Jira */
+    overflow: hidden;
+    position: relative;
+    z-index: 1;
     width: 100%;
-    max-width: 400px;
 }
 
-h1 {
+.navbar-brand {
+    float: left;
+    display: block;
+    color: #fff;
+    text-align: center;
+    padding: 14px 16px;
+    text-decoration: none;
+    font-size: 18px;
+}
+
+.navbar .nav-links {
+    float: right;
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+}
+
+.navbar .nav-links li {
+    position: relative;
+}
+
+.navbar .nav-links li a {
+    display: block;
+    color: #fff;
+    text-align: center;
+    padding: 14px 16px;
+    text-decoration: none;
+}
+
+.navbar .nav-links li a:hover {
+    background-color: #003D99;
+    color: #fff;
+}
+
+.hamburger-menu {
+    display: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: #fff;
+    padding: 14px 16px;
+    float: right; /* Mueve el ícono de hamburguesa al lado derecho */
+}
+
+.dropdown-content {
+    display: none;
+    position: absolute;
+    background-color: #f9f9f9;
+    min-width: 160px;
+    box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+    z-index: 2;
+    right: 0; /* Ajusta para que se alinee a la derecha */
+}
+
+.dropdown-content a {
+    color: black;
+    padding: 12px 16px;
+    text-decoration: none;
+    display: block;
+    text-align: left;
+}
+
+.dropdown-content a:hover {
+    background-color: #f1f1f1;
+}
+
+.navbar .nav-links li:hover .dropdown-content {
+    display: block;
+}
+
+.login-container {
+    max-width: 400px;
+    margin: 100px auto;
+    padding: 20px;
+    background-color: #fff;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+}
+
+.login-container h1 {
     text-align: center;
     margin-bottom: 20px;
 }
@@ -38,33 +108,148 @@ h1 {
 .input-group label {
     display: block;
     margin-bottom: 5px;
-    color: #333;
 }
 
 .input-group input {
-    width: 100%;
+    width: calc(100% - 22px);
     padding: 10px;
     border: 1px solid #ccc;
-    border-radius: 5px;
+    border-radius: 4px;
 }
 
 button {
     width: 100%;
     padding: 10px;
     border: none;
-    border-radius: 5px;
-    background-color: #007BFF;
+    border-radius: 4px;
+    background-color: #0052CC;
     color: white;
     font-size: 16px;
     cursor: pointer;
 }
 
 button:hover {
-    background-color: #0056b3;
+    background-color: #003D99;
 }
 
 #message {
     margin-top: 15px;
     text-align: center;
+    font-size: 14px;
     color: red;
+}
+
+.task-container {
+    max-width: 800px;
+    margin: 20px auto;
+    padding: 20px;
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.task {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+    margin-bottom: 10px;
+    background-color: #f9f9f9;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+#message {
+    margin-top: 15px;
+    text-align: center;
+    font-size: 14px;
+}
+
+.task-container {
+    max-width: 800px;
+    margin: 20px auto;
+    padding: 20px;
+    background-color: #fff;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+}
+
+.task-content {
+    margin-top: 20px;
+}
+
+.task {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+    border-bottom: 1px solid #ccc;
+}
+
+.task-buttons button {
+    margin-left: 10px;
+}
+
+.task-buttons {
+    display: flex;
+    gap: 10px;
+}
+
+.task button {
+    padding: 8px 12px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.task button.complete {
+    background-color: #5cb85c;
+    color: white;
+}
+
+.task button.complete:hover {
+    background-color: #4cae4c;
+}
+
+.task button.delete {
+    background-color: #d9534f;
+    color: white;
+}
+
+.task button.delete:hover {
+    background-color: #c9302c;
+}
+
+footer {
+    background-color: #0052CC;
+    color: #fff;
+    text-align: center;
+    padding: 10px 0;
+    position: fixed;
+    width: 100%;
+    bottom: 0;
+}
+
+
+
+
+/* Responsive */
+@media (max-width: 768px) {
+    .navbar .nav-links {
+        display: none;
+        width: 100%;
+        flex-direction: column;
+    }
+
+    .navbar .nav-links.show {
+        display: flex;
+    }
+
+    .navbar .nav-links li {
+        width: 100%;
+    }
+
+    .hamburger-menu {
+        display: block;
+    }
 }
