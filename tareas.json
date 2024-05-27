@@ -270,5 +270,22 @@
         "dependiente_de": "",
         "completada_por": null,
         "b": false
+    },
+    {
+        "id": "1ec0d03d-8b17-4a13-ae43-0d6f70bd9fbb",
+        "descripcion": "correr",
+        "estado": "e",
+        "fecha_inicio": "2024-05-26T14:57:32.382036",
+        "fecha_fin": "2024-05-26T15:00:14.181908",
+        "id_usuario": "3d2f2d3b-39f2-4fd2-b3ae-316193792209",
+        "tipo": false,
+        "id_sec": 16,
+        "id_sec2": -16,
+        "compartida": false,
+        "compartida_con": "",
+        "dependiente": false,
+        "dependiente_de": "",
+        "completada_por": "3d2f2d3b-39f2-4fd2-b3ae-316193792209",
+        "b": false
     }
 ]

@@ -3,10 +3,13 @@ from flasgger import Swagger, swag_from
 from flask_cors import CORS
 from flask_wtf.csrf import CSRFProtect, generate_csrf, CSRFError
 from ManageTask import ListaDeTareas, GestorUsuarios
+from datetime import datetime, timedelta
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your_secret_key'  # Usa una clave real en producción
 app.config['WTF_CSRF_TIME_LIMIT'] = 1800  # 30 minutos expresados en segundos
+app.config['SESSION_COOKIE_SAMESITE'] = 'None'
+app.config['SESSION_COOKIE_SECURE'] = True
 
 # Configuración de CORS para permitir solicitudes desde el origen esperado
 CORS(app, supports_credentials=True, resources={r"*": {"origins": "http://127.0.0.1:5577", "methods": ["GET", "POST", "PUT", "DELETE"], "allow_headers": ["Content-Type", "X-CSRFToken"]}})
@@ -20,20 +23,28 @@ swagger = Swagger(app)
 lista_de_tareas = ListaDeTareas()
 gestor_usuarios = GestorUsuarios()
 
+# Almacena los intentos fallidos de login y el tiempo de bloqueo
+login_attempts = {}
+LOCKOUT_TIME = 30 * 60  # 30 minutos en segundos
+
 @app.route("/csrf-token", methods=["GET"])
 def csrf_token():
     # Generar el token CSRF una sola vez
     csrf_token = generate_csrf()
     response = jsonify({'csrfToken': csrf_token})
+    response.headers['Access-Control-Allow-Origin'] = 'http://127.0.0.1:5577'
+    response.headers['Access-Control-Allow-Credentials'] = 'true'
     response.headers['X-CSRFToken'] = csrf_token
     return response
 
 @app.after_request
 def after_request(response):
     # Configuración de headers para CORS y CSRF
-    response.headers.add('Access-Control-Allow-Credentials', 'true')
-    response.headers.add("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-    response.headers.add('Access-Control-Allow-Headers', 'Content-Type, X-CSRFToken')
+    response.headers['Access-Control-Allow-Origin'] = 'http://127.0.0.1:5577'
+    response.headers['Access-Control-Allow-Credentials'] = 'true'
+    response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS'
+    response.headers['Access-Control-Allow-Headers'] = 'Content-Type, X-CSRFToken'
+    response.headers.add('Set-Cookie', 'SameSite=None; Secure')
     return response
 
 @app.errorhandler(CSRFError)
@@ -67,10 +78,19 @@ def handle_bad_request(e):
     }
 })
 def login_usuario():
+    print("Request received at /login")
     data = request.get_json()
+    print("Login data received:", data)
     nickname = data.get("nickname")
     clave = data.get("clave")
     token = data.get("token")
+
+    # Verificar si el usuario está bloqueado
+    current_time = datetime.now()
+    if nickname in login_attempts:
+        attempts, lockout_until = login_attempts[nickname]
+        if attempts >= 3 and current_time < lockout_until:
+            return jsonify({"message": "Cuenta bloqueada. Inténtalo de nuevo más tarde."}), 403
 
     if not token:
         usuario = next((u for u in gestor_usuarios.usuarios if u.nickname == nickname and u.clave == clave), None)
@@ -79,10 +99,26 @@ def login_usuario():
             return jsonify({
                 "message": "Token enviado al email registrado."
             }), 200
-        return jsonify({"message": "Usuario o clave incorrecta"}), 401
+        else:
+            # Incrementar los intentos de login fallidos
+            if nickname in login_attempts:
+                attempts, lockout_until = login_attempts[nickname]
+                attempts += 1
+                if attempts >= 3:
+                    lockout_until = current_time + timedelta(seconds=LOCKOUT_TIME)
+            else:
+                attempts = 1
+                lockout_until = current_time
+
+            login_attempts[nickname] = (attempts, lockout_until)
+            remaining_attempts = 3 - attempts
+            return jsonify({"message": f"Usuario o clave incorrecta. Te quedan {remaining_attempts} intentos."}), 401
     else:
         if gestor_usuarios.validar_token(nickname, token):
             session['user'] = nickname  # Guardar el usuario en la sesión
+            # Restablecer los intentos de login después de un login exitoso
+            if nickname in login_attempts:
+                del login_attempts[nickname]
             return jsonify({
                 "message": "Login exitoso",
                 "id_usuario": next(u.id_user for u in gestor_usuarios.usuarios if u.nickname == nickname),

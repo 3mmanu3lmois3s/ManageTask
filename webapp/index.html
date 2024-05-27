@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Página de Login</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="app">
+        <div id="loginView">
+            <div class="login-container">
+                <h1>Iniciar Sesión</h1>
+                <form id="loginForm">
+                    <div class="input-group">
+                        <label for="nickname">Usuario</label>
+                        <input type="text" id="nickname" name="nickname" required>
+                    </div>
+                    <div class="input-group">
+                        <label for="clave">Contraseña</label>
+                        <input type="password" id="clave" name="clave" required>
+                    </div>
+                    <div class="input-group hidden" id="tokenInput">
+                        <label for="token">Token</label>
+                        <input type="text" id="token" name="token">
+                    </div>
+                    <input type="hidden" id="tokenSent" value="false">
+                    <button type="submit">Ingresar</button>
+                </form>
+                <div id="message"></div>
+            </div>
+        </div>
+        
+        <div id="taskManagerView" class="hidden">
+            <div class="task-container">
+                <h1>Gestión de Tareas</h1>
+                <button id="logoutButton">Cerrar Sesión</button>
+                <!-- Aquí puedes añadir más contenido para la gestión de tareas -->
+            </div>
+        </div>
+    </div>
+    <script src="app.js"></script>
+</body>
+</html>
